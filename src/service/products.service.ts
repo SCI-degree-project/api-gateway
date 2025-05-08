@@ -38,6 +38,13 @@ export class ProductsService {
     );
   }
 
+  async updateProduct(tenantId: string, productId: string, productDTO: any) {
+    return await this.requestWithErrorHandling(
+      this.http.put(`${this.baseUrl}/${tenantId}/${productId}`, productDTO)
+    );
+  }
+  
+
   private async requestWithErrorHandling<T>(observable: Observable<any>): Promise<T> {
     try {
       const response = await firstValueFrom(observable);

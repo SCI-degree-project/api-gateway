@@ -2,13 +2,14 @@ import {
   Controller,
   Post,
   UseInterceptors,
-  UploadedFile,
   Body,
   Get,
   Query,
   Param,
+  Put,
+  UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from 'src/service/media.service';
 import { ProductsService } from 'src/service/products.service';
 import { Throttle } from '@nestjs/throttler';
@@ -27,16 +28,18 @@ export class ProductsController {
     },
   })
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('images'))
   async createProduct(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
   ) {
-    if (!file) {
-      throw new Error('Image file is required');
+    if (!files?.length) {
+      throw new Error('At least one image file is required');
     }
 
-    const imageUrl = await this.mediaService.uploadImage(file);
+    const urls = await Promise.all(
+      files.map(file => this.mediaService.uploadImage(file))
+    );
 
     const productPayload = {
       name: body.name,
@@ -45,7 +48,7 @@ export class ProductsController {
       materials: JSON.parse(body.materials),
       style: body.style,
       tenantId: body.tenantId,
-      gallery: [imageUrl],
+      gallery: urls,
       model: '',
     };
 
@@ -72,4 +75,35 @@ export class ProductsController {
     return await this.productsService.getProductById(tenantId, productId);
   }
 
+  @Put(':tenantId/:productId')
+  @UseInterceptors(FilesInterceptor('images'))
+  async updateProduct(
+    @Param('tenantId') tenantId: string,
+    @Param('productId') productId: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: any,
+  ) {
+    let gallery: string[] = [];
+
+    if (files?.length) {
+      gallery = await Promise.all(
+        files.map(file => this.mediaService.uploadImage(file))
+      );
+    } else if (body.gallery) {
+      gallery = JSON.parse(body.gallery);
+    }
+
+    const productPayload = {
+      name: body.name,
+      description: body.description,
+      price: parseFloat(body.price),
+      materials: JSON.parse(body.materials),
+      style: body.style,
+      tenantId,
+      gallery,
+      model: body.model || '',
+    };
+
+    return await this.productsService.updateProduct(tenantId, productId, productPayload);
+  }
 }
