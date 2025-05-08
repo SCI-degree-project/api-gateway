@@ -25,6 +25,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
+    "@nestjs/throttler": "^6.4.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "multer": "^1.4.5-lts.2",

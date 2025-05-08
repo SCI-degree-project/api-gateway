@@ -11,6 +11,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from 'src/service/media.service';
 import { ProductsService } from 'src/service/products.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('products')
 export class ProductsController {
@@ -19,6 +20,12 @@ export class ProductsController {
     private readonly productsService: ProductsService,
   ) { }
 
+  @Throttle({
+    default: {
+      limit: 4,
+      ttl: 20,
+    },
+  })
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   async createProduct(
