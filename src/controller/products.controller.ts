@@ -12,16 +12,21 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from 'src/service/media.service';
 import { ProductsService } from 'src/service/products.service';
+import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { CreateProductDto } from 'src/dto/create-product.dto';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(
     private readonly mediaService: MediaService,
     private readonly productsService: ProductsService,
-  ) {}
+  ) { }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new product' })
   @UseInterceptors(FilesInterceptor('images'))
+  @ApiBody({ type: CreateProductDto })
   async createProduct(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
@@ -43,6 +48,9 @@ export class ProductsController {
   }
 
   @Put(':tenantId/:productId')
+  @ApiOperation({ summary: 'Update a product' })
+  @ApiParam({ name: 'tenantId', type: String })
+  @ApiParam({ name: 'productId', type: String })
   @UseInterceptors(FilesInterceptor('images'))
   async updateProduct(
     @Param('tenantId') tenantId: string,
@@ -73,6 +81,9 @@ export class ProductsController {
   }
 
   @Get(':tenantId')
+  @ApiOperation({ summary: 'Get a list of products with pagination' })
+  @ApiParam({ name: 'tenantId', type: String })
+  @ApiQuery({ name: 'page', required: false })
   async getProducts(
     @Param('tenantId') tenantId: string,
     @Query('page') page: string,
@@ -84,11 +95,15 @@ export class ProductsController {
   }
 
   @Get('id/:productId')
+  @ApiOperation({ summary: 'Get a product by Id' })
+  @ApiParam({ name: 'productId', type: String })
   async getProductById(@Param('productId') productId: string) {
     return this.productsService.getProductById(productId);
   }
 
   @Post('batch')
+  @ApiOperation({ summary: 'Get a products batch' })
+  @ApiBody({ schema: { type: 'array', items: { type: 'string' } } })
   async getProductsBatch(@Body() productIds: string[]) {
     return this.productsService.getProductsBatch(productIds);
   }
