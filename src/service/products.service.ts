@@ -19,33 +19,26 @@ export class ProductsService {
   }
 
   async createProduct(data: any) {
-    return this.requestWithErrorHandling(
-      this.http.post(this.baseUrl, data)
-    );
+    return this.request(this.http.post(this.baseUrl, data));
+  }
+
+  async updateProduct(tenantId: string, productId: string, data: any) {
+    return this.request(this.http.put(`${this.baseUrl}/${tenantId}/${productId}`, data));
   }
 
   async getProducts(tenantId: string, page: number, size: number) {
-    return this.requestWithErrorHandling(
-      this.http.get(`${this.baseUrl}/${tenantId}`, {
-        params: { page, size },
-      })
-    );
+    return this.request(this.http.get(`${this.baseUrl}/${tenantId}`, { params: { page, size } }));
   }
 
-  async getProductById(tenantId: string, productId: string) {
-    return this.requestWithErrorHandling(
-      this.http.get(`${this.baseUrl}/${tenantId}/${productId}`)
-    );
+  async getProductById(productId: string) {
+    return this.request(this.http.get(`${this.baseUrl}/product/${productId}`));
   }
 
-  async updateProduct(tenantId: string, productId: string, productDTO: any) {
-    return await this.requestWithErrorHandling(
-      this.http.put(`${this.baseUrl}/${tenantId}/${productId}`, productDTO)
-    );
+  async getProductsBatch(ids: string[]) {
+    return this.request(this.http.post(`${this.baseUrl}/batch`, ids));
   }
-  
 
-  private async requestWithErrorHandling<T>(observable: Observable<any>): Promise<T> {
+  private async request<T>(observable: Observable<any>): Promise<T> {
     try {
       const response = await firstValueFrom(observable);
       return response.data;

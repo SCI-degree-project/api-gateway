@@ -1,45 +1,32 @@
 import {
   Controller,
-  Post,
-  UseInterceptors,
-  Body,
   Get,
-  Query,
-  Param,
+  Post,
   Put,
+  Body,
+  Param,
+  Query,
   UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from 'src/service/media.service';
 import { ProductsService } from 'src/service/products.service';
-import { Throttle } from '@nestjs/throttler';
 
 @Controller('products')
 export class ProductsController {
   constructor(
     private readonly mediaService: MediaService,
     private readonly productsService: ProductsService,
-  ) { }
+  ) {}
 
-  @Throttle({
-    default: {
-      limit: 4,
-      ttl: 20,
-    },
-  })
   @Post()
   @UseInterceptors(FilesInterceptor('images'))
   async createProduct(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
   ) {
-    if (!files?.length) {
-      throw new Error('At least one image file is required');
-    }
-
-    const urls = await Promise.all(
-      files.map(file => this.mediaService.uploadImage(file))
-    );
+    const urls = await Promise.all(files.map(file => this.mediaService.uploadImage(file)));
 
     const productPayload = {
       name: body.name,
@@ -52,27 +39,7 @@ export class ProductsController {
       model: '',
     };
 
-    return await this.productsService.createProduct(productPayload);
-  }
-
-  @Get(':tenantId')
-  async getProducts(
-    @Param('tenantId') tenantId: string,
-    @Query('page') page: string,
-    @Query('size') size: string,
-  ) {
-    const pageNumber = parseInt(page) || 0;
-    const sizeNumber = parseInt(size) || 10;
-
-    return await this.productsService.getProducts(tenantId, pageNumber, sizeNumber);
-  }
-
-  @Get(':tenantId/:productId')
-  async getProductById(
-    @Param('tenantId') tenantId: string,
-    @Param('productId') productId: string,
-  ) {
-    return await this.productsService.getProductById(tenantId, productId);
+    return this.productsService.createProduct(productPayload);
   }
 
   @Put(':tenantId/:productId')
@@ -86,9 +53,7 @@ export class ProductsController {
     let gallery: string[] = [];
 
     if (files?.length) {
-      gallery = await Promise.all(
-        files.map(file => this.mediaService.uploadImage(file))
-      );
+      gallery = await Promise.all(files.map(file => this.mediaService.uploadImage(file)));
     } else if (body.gallery) {
       gallery = JSON.parse(body.gallery);
     }
@@ -104,6 +69,27 @@ export class ProductsController {
       model: body.model || '',
     };
 
-    return await this.productsService.updateProduct(tenantId, productId, productPayload);
+    return this.productsService.updateProduct(tenantId, productId, productPayload);
+  }
+
+  @Get(':tenantId')
+  async getProducts(
+    @Param('tenantId') tenantId: string,
+    @Query('page') page: string,
+    @Query('size') size: string,
+  ) {
+    const pageNumber = parseInt(page) || 0;
+    const sizeNumber = parseInt(size) || 10;
+    return this.productsService.getProducts(tenantId, pageNumber, sizeNumber);
+  }
+
+  @Get('id/:productId')
+  async getProductById(@Param('productId') productId: string) {
+    return this.productsService.getProductById(productId);
+  }
+
+  @Post('batch')
+  async getProductsBatch(@Body() productIds: string[]) {
+    return this.productsService.getProductsBatch(productIds);
   }
 }
