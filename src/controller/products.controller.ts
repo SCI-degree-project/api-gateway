@@ -8,12 +8,14 @@ import {
   Query,
   UploadedFiles,
   UseInterceptors,
+  Patch,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { MediaService } from 'src/service/media.service';
 import { ProductsService } from 'src/service/products.service';
-import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreateProductDto } from 'src/dto/create-product.dto';
+import { UpdateProductDto } from 'src/dto/update-product.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -25,59 +27,111 @@ export class ProductsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new product' })
-  @UseInterceptors(FilesInterceptor('images'))
   @ApiBody({ type: CreateProductDto })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'gallery', maxCount: 10 },
+      { name: 'model', maxCount: 1 },
+    ])
+  )
   async createProduct(
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: any,
+    @UploadedFiles() files: {
+      gallery?: Express.Multer.File[];
+      model?: Express.Multer.File[];
+    },
+    @Body() body: CreateProductDto,
   ) {
-    const urls = await Promise.all(files.map(file => this.mediaService.uploadImage(file)));
+    const imageFiles = files.gallery || [];
+    const modelFile = files.model?.[0];
 
-    const productPayload = {
-      name: body.name,
-      description: body.description,
-      price: parseFloat(body.price),
-      materials: JSON.parse(body.materials),
-      style: body.style,
-      tenantId: body.tenantId,
-      gallery: urls,
-      model: '',
-    };
+    if (imageFiles.length === 0) {
+      throw new Error('At least one image is required');
+    }
 
-    return this.productsService.createProduct(productPayload);
-  }
+    const galleryUrls = await Promise.all(
+      imageFiles.map(file => this.mediaService.uploadFile(file)),
+    );
 
-  @Put(':tenantId/:productId')
-  @ApiOperation({ summary: 'Update a product' })
-  @ApiParam({ name: 'tenantId', type: String })
-  @ApiParam({ name: 'productId', type: String })
-  @UseInterceptors(FilesInterceptor('images'))
-  async updateProduct(
-    @Param('tenantId') tenantId: string,
-    @Param('productId') productId: string,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: any,
-  ) {
-    let gallery: string[] = [];
-
-    if (files?.length) {
-      gallery = await Promise.all(files.map(file => this.mediaService.uploadImage(file)));
-    } else if (body.gallery) {
-      gallery = JSON.parse(body.gallery);
+    let modelUrl = '';
+    if (modelFile) {
+      modelUrl = await this.mediaService.uploadFile(modelFile);
     }
 
     const productPayload = {
       name: body.name,
       description: body.description,
-      price: parseFloat(body.price),
-      materials: JSON.parse(body.materials),
+      price: Number(body.price),
+      materials: Array.isArray(body.materials)
+        ? body.materials
+        : JSON.parse(body.materials),
       style: body.style,
-      tenantId,
-      gallery,
-      model: body.model || '',
+      tenantId: body.tenantId,
+      gallery: galleryUrls,
+      model: modelUrl,
     };
 
-    return this.productsService.updateProduct(tenantId, productId, productPayload);
+    return this.productsService.createProduct(productPayload);
+  }
+
+  @Patch(':tenantId/:productId')
+  @ApiOperation({ summary: 'Update a product with new images or model' })
+  @ApiParam({ name: 'tenantId', type: String })
+  @ApiParam({ name: 'productId', type: String })
+  @ApiBody({ type: UpdateProductDto })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'gallery', maxCount: 10 },
+      { name: 'model', maxCount: 1 },
+    ])
+  )
+  async updateProduct(
+    @Param('tenantId') tenantId: string,
+    @Param('productId') productId: string,
+    @UploadedFiles() files: {
+      gallery?: Express.Multer.File[];
+      model?: Express.Multer.File[];
+    } = {},
+    @Body() body: UpdateProductDto,
+  ) {
+    const imageFiles = files?.gallery || [];
+    const modelFile = files?.model?.[0];
+
+    let gallery: string[] = [];
+
+    if (imageFiles.length > 0) {
+      gallery = await Promise.all(
+        imageFiles.map(file => this.mediaService.uploadFile(file)),
+      );
+    } else if (body.gallery) {
+      gallery = Array.isArray(body.gallery)
+        ? body.gallery
+        : JSON.parse(body.gallery as any);
+    }
+
+    let modelUrl = '';
+    if (modelFile) {
+      modelUrl = await this.mediaService.uploadFile(modelFile);
+    } else if (body.model) {
+      modelUrl = body.model;
+    }
+
+    const productPayload: any = {
+      tenantId,
+      gallery,
+      model: modelUrl,
+    };
+
+    if (body.name !== undefined) productPayload.name = body.name;
+    if (body.description !== undefined) productPayload.description = body.description;
+    if (body.price !== undefined) productPayload.price = Number(body.price);
+    if (body.materials !== undefined) {
+      productPayload.materials = Array.isArray(body.materials)
+        ? body.materials
+        : JSON.parse(body.materials as any);
+    }
+    if (body.style !== undefined) productPayload.style = body.style;
+
+    return this.productsService.patchProduct(tenantId, productId, productPayload);
   }
 
   @Get(':tenantId')
