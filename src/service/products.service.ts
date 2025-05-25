@@ -49,4 +49,10 @@ export class ProductsService {
       throw new HttpException(message, status);
     }
   }
+
+  async patchProduct(tenantId: string, productId: string, dto: any) {
+    return this.request(
+      this.http.patch(`${this.baseUrl}/${tenantId}/${productId}`, dto)
+    );
+  }
 }
