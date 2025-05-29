@@ -16,6 +16,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreateProductDto } from 'src/dto/create-product.dto';
 import { UpdateProductDto } from 'src/dto/update-product.dto';
+import { ProductSearchCriteriaDto } from 'src/dto/product-search-criteria.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -160,5 +161,14 @@ export class ProductsController {
   @ApiBody({ schema: { type: 'array', items: { type: 'string' } } })
   async getProductsBatch(@Body() productIds: string[]) {
     return this.productsService.getProductsBatch(productIds);
+  }
+
+  @Post('search')
+  @ApiOperation({ summary: 'Search products with criteria' })
+  @ApiBody({ type: ProductSearchCriteriaDto })
+  async searchProducts(
+    @Body() criteria: ProductSearchCriteriaDto,
+  ) {
+    return this.productsService.searchProducts(criteria);
   }
 }
