@@ -55,4 +55,10 @@ export class ProductsService {
       this.http.patch(`${this.baseUrl}/${tenantId}/${productId}`, dto)
     );
   }
+
+  async searchProducts(criteria: any) {
+    return this.request(
+      this.http.post(`${this.baseUrl}/search`, criteria)
+    );
+  }
 }
