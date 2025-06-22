@@ -32,6 +32,18 @@ export class MetricsService {
     );
   }
 
+  async registerArView(productId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${this.baseUrl}/ar-views/${productId}`),
+    );
+  }
+
+  async registerSearchAppearance(productId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${this.baseUrl}/search-appearances/${productId}`),
+    );
+  }
+
   mapError(error: any): number {
     if (error?.response?.status) {
       return error.response.status;

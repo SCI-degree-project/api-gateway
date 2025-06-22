@@ -15,7 +15,7 @@ export class ProductsService {
     if (!baseUrl) {
       throw new Error('PRODUCTS_API_URL is not defined in environment variables');
     }
-    this.baseUrl = baseUrl;
+    this.baseUrl = `${baseUrl}/v1/products`;
   }
 
   async createProduct(data: any) {
