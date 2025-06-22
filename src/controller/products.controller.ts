@@ -2,18 +2,18 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Body,
   Param,
   Query,
   UploadedFiles,
   UseInterceptors,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { MediaService } from 'src/service/media.service';
 import { ProductsService } from 'src/service/products.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { CreateProductDto } from 'src/dto/create-product.dto';
 import { UpdateProductDto } from 'src/dto/update-product.dto';
 import { ProductSearchCriteriaDto } from 'src/dto/product-search-criteria.dto';
@@ -64,7 +64,7 @@ export class ProductsController {
       price: Number(body.price),
       materials: Array.isArray(body.materials)
         ? body.materials
-        : JSON.parse(body.materials),
+        : [body.materials].filter(Boolean),
       style: body.style,
       tenantId: body.tenantId,
       gallery: galleryUrls,
@@ -104,9 +104,7 @@ export class ProductsController {
         imageFiles.map(file => this.mediaService.uploadFile(file)),
       );
     } else if (body.gallery) {
-      gallery = Array.isArray(body.gallery)
-        ? body.gallery
-        : JSON.parse(body.gallery as any);
+      gallery = Array.isArray(body.gallery) ? body.gallery : [body.gallery].filter(Boolean);
     }
 
     let modelUrl = '';
@@ -128,7 +126,7 @@ export class ProductsController {
     if (body.materials !== undefined) {
       productPayload.materials = Array.isArray(body.materials)
         ? body.materials
-        : JSON.parse(body.materials as any);
+        : [body.materials].filter(Boolean);
     }
     if (body.style !== undefined) productPayload.style = body.style;
 
@@ -139,13 +137,14 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get a list of products with pagination' })
   @ApiParam({ name: 'tenantId', type: String })
   @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'size', required: false })
   async getProducts(
     @Param('tenantId') tenantId: string,
     @Query('page') page: string,
     @Query('size') size: string,
   ) {
     const pageNumber = parseInt(page) || 0;
-    const sizeNumber = parseInt(size) || 10;
+    const sizeNumber = parseInt(size) || 20;
     return this.productsService.getProducts(tenantId, pageNumber, sizeNumber);
   }
 
@@ -170,5 +169,16 @@ export class ProductsController {
     @Body() criteria: ProductSearchCriteriaDto,
   ) {
     return this.productsService.searchProducts(criteria);
+  }
+
+  @Delete(':tenantId/:productId')
+  @ApiOperation({ summary: 'Delete a product' })
+  @ApiParam({ name: 'tenantId', type: String })
+  @ApiParam({ name: 'productId', type: String })
+  async deleteProduct(
+    @Param('tenantId') tenantId: string,
+    @Param('productId') productId: string,
+  ) {
+    return this.productsService.deleteProduct(tenantId, productId);
   }
 }

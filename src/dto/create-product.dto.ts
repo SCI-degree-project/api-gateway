@@ -10,8 +10,8 @@ export class CreateProductDto {
   @ApiProperty({ example: 299.99 })
   price: number;
 
-  @ApiProperty({ type: [String], example: ['WOOD', 'LEATHER'] })
-  materials: string[];
+  @ApiProperty({ type: [String], example: ['WOOD'] })
+  materials: String[];
 
   @ApiProperty({ example: 'MODERN' })
   style: string;
