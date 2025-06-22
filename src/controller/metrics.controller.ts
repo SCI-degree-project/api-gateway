@@ -9,7 +9,7 @@ import {
 import { MetricsService } from 'src/service/metrics.service';
 import { Response } from 'express';
 
-@Controller('/v1/metrics')
+@Controller('/metrics')
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 
@@ -27,6 +27,26 @@ export class MetricsController {
   async registerClick(@Param('productId') productId: string, @Res() res: Response) {
     try {
       await this.metricsService.registerClick(productId);
+      return res.status(HttpStatus.OK).send();
+    } catch (error) {
+      return res.status(this.metricsService.mapError(error)).send();
+    }
+  }
+
+  @Post('ar-views/:productId')
+  async registerArView(@Param('productId') productId: string, @Res() res: Response) {
+    try {
+      await this.metricsService.registerArView(productId);
+      return res.status(HttpStatus.OK).send();
+    } catch (error) {
+      return res.status(this.metricsService.mapError(error)).send();
+    }
+  }
+
+  @Post('search-appearances/:productId')
+  async registerSearchAppearance(@Param('productId') productId: string, @Res() res: Response) {
+    try {
+      await this.metricsService.registerSearchAppearance(productId);
       return res.status(HttpStatus.OK).send();
     } catch (error) {
       return res.status(this.metricsService.mapError(error)).send();
