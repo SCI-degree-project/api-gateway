@@ -61,4 +61,10 @@ export class ProductsService {
       this.http.post(`${this.baseUrl}/search`, criteria)
     );
   }
+
+  async deleteProduct(tenantId: string, productId: string) {
+    return this.request(
+      this.http.delete(`${this.baseUrl}/${tenantId}/${productId}`)
+    )
+  }
 }
