@@ -11,11 +11,11 @@ export class ProductsService {
     private readonly http: HttpService,
     private readonly configService: ConfigService,
   ) {
-    const baseUrl = this.configService.get<string>('PRODUCTS_API_URL');
-    if (!baseUrl) {
+    const url = this.configService.get<string>('PRODUCTS_API_URL');
+    if (!url) {
       throw new Error('PRODUCTS_API_URL is not defined in environment variables');
     }
-    this.baseUrl = `${baseUrl}/v1/products`;
+    this.baseUrl = `${url}/v1/products`;
   }
 
   async createProduct(data: any) {
