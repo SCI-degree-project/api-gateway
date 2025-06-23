@@ -6,51 +6,58 @@ import { AxiosError } from 'axios';
 
 @Injectable()
 export class MetricsService {
-  private readonly baseUrl: string;
+    private readonly baseUrl: string;
 
-  constructor(
-    private readonly http: HttpService,
-    private readonly configService: ConfigService,
-  ) {
-    const url = this.configService.get<string>('PRODUCTS_API_URL');
-    if (!url) {
-      throw new Error('PRODUCTS_API_URL is not defined in environment variables');
+    constructor(
+        private readonly http: HttpService,
+        private readonly configService: ConfigService,
+    ) {
+        const url = this.configService.get<string>('PRODUCTS_API_URL');
+        if (!url) {
+            throw new Error('PRODUCTS_API_URL is not defined in environment variables');
+        }
+        this.baseUrl = `${url}/v1/metrics`;
     }
-    this.baseUrl = `${url}/v1/metrics`;
-  }
 
-  async getProductMetric(productId: string): Promise<any> {
-    const response = await firstValueFrom(
-      this.http.get(`${this.baseUrl}/${productId}`),
-    );
-    return response.data;
-  }
-
-  async registerClick(productId: string): Promise<void> {
-    await firstValueFrom(
-      this.http.post(`${this.baseUrl}/click/${productId}`),
-    );
-  }
-
-  async registerArView(productId: string): Promise<void> {
-    await firstValueFrom(
-      this.http.post(`${this.baseUrl}/ar-views/${productId}`),
-    );
-  }
-
-  async registerSearchAppearance(productId: string): Promise<void> {
-    await firstValueFrom(
-      this.http.post(`${this.baseUrl}/search-appearances/${productId}`),
-    );
-  }
-
-  mapError(error: any): number {
-    if (error?.response?.status) {
-      return error.response.status;
+    async getProductMetric(productId: string): Promise<any> {
+        const response = await firstValueFrom(
+            this.http.get(`${this.baseUrl}/${productId}`),
+        );
+        return response.data;
     }
-    if (error instanceof AxiosError) {
-      return error.response?.status || 500;
+
+    async registerClick(productId: string): Promise<void> {
+        await firstValueFrom(
+            this.http.post(`${this.baseUrl}/click/${productId}`),
+        );
     }
-    return 500;
-  }
+
+    async registerArView(productId: string): Promise<void> {
+        await firstValueFrom(
+            this.http.post(`${this.baseUrl}/ar-views/${productId}`),
+        );
+    }
+
+    async registerSearchAppearance(productId: string): Promise<void> {
+        await firstValueFrom(
+            this.http.post(`${this.baseUrl}/search-appearances/${productId}`),
+        );
+    }
+
+    async getTenantMetricsReport(tenantId: string): Promise<any> {
+        const response = await firstValueFrom(
+            this.http.get(`${this.baseUrl}/report/${tenantId}`)
+        );
+        return response.data;
+    }
+
+    mapError(error: any): number {
+        if (error?.response?.status) {
+            return error.response.status;
+        }
+        if (error instanceof AxiosError) {
+            return error.response?.status || 500;
+        }
+        return 500;
+    }
 }
