@@ -9,6 +9,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { MetricsService } from './service/metrics.service';
 import { MetricsController } from './controller/metrics.controller';
+import { StoreController } from './controller/stores.controller';
+import { StoreService } from './service/store.service';
 
 @Module({
   imports: [
@@ -26,12 +28,14 @@ import { MetricsController } from './controller/metrics.controller';
   ],
   controllers: [
     ProductsController,
-    MetricsController
+    MetricsController,
+    StoreController
   ],
   providers: [
     ProductsService,
     MetricsService,
     MediaService,
+    StoreService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
