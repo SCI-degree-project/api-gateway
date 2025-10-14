@@ -17,6 +17,7 @@ import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody } from '@nestjs/swag
 import { CreateProductDto } from 'src/dto/create-product.dto';
 import { UpdateProductDto } from 'src/dto/update-product.dto';
 import { ProductSearchCriteriaDto } from 'src/dto/product-search-criteria.dto';
+import { GallertItem } from 'src/domain/GalleryItem';
 
 @ApiTags('Products')
 @Controller('products')
@@ -58,17 +59,29 @@ export class ProductsController {
       modelUrl = await this.mediaService.uploadFile(modelFile);
     }
 
-    const productPayload = {
+    const finalGalleryItems = galleryUrls.map((url, index) => ({
+      imageUrl: url,
+      altText: imageFiles[index].originalname,
+    }));
+
+    const productPayload: any = {
       name: body.name,
       description: body.description,
       price: Number(body.price),
+
       materials: Array.isArray(body.materials)
         ? body.materials
         : [body.materials].filter(Boolean),
+
       style: body.style,
       tenantId: body.tenantId,
-      gallery: galleryUrls,
-      model: modelUrl,
+
+      media: {
+        gallery: finalGalleryItems,
+        model: modelUrl,
+      },
+
+      dimensions: body.dimensions,
     };
 
     return this.productsService.createProduct(productPayload);
@@ -97,38 +110,57 @@ export class ProductsController {
     const imageFiles = files?.gallery || [];
     const modelFile = files?.model?.[0];
 
-    let gallery: string[] = [];
+    let finalGallery: GallertItem[] | undefined;
+    let finalModelUrl: string | undefined;
 
     if (imageFiles.length > 0) {
-      gallery = await Promise.all(
+      const uploadedUrls = await Promise.all(
         imageFiles.map(file => this.mediaService.uploadFile(file)),
       );
-    } else if (body.gallery) {
-      gallery = Array.isArray(body.gallery) ? body.gallery : [body.gallery].filter(Boolean);
+
+      finalGallery = uploadedUrls.map((url, index) => ({
+        imageUrl: url,
+        altText: imageFiles[index].originalname,
+      }));
+
+    } else if (body.media?.gallery) {
+      finalGallery = body.media.gallery;
     }
 
-    let modelUrl = '';
     if (modelFile) {
-      modelUrl = await this.mediaService.uploadFile(modelFile);
-    } else if (body.model) {
-      modelUrl = body.model;
+      finalModelUrl = await this.mediaService.uploadFile(modelFile);
+    } else if (body.media?.model) {
+      finalModelUrl = body.media.model;
     }
 
     const productPayload: any = {
       tenantId,
-      gallery,
-      model: modelUrl,
     };
+
+    if (finalGallery !== undefined || finalModelUrl !== undefined) {
+      productPayload.media = {
+        gallery: finalGallery,
+        model: finalModelUrl,
+      };
+    }
 
     if (body.name !== undefined) productPayload.name = body.name;
     if (body.description !== undefined) productPayload.description = body.description;
     if (body.price !== undefined) productPayload.price = Number(body.price);
+
     if (body.materials !== undefined) {
       productPayload.materials = Array.isArray(body.materials)
         ? body.materials
         : [body.materials].filter(Boolean);
     }
+
     if (body.style !== undefined) productPayload.style = body.style;
+
+    if (body.dimensions !== undefined) {
+      productPayload.dimensions = body.dimensions;
+    }
+
+    Object.keys(productPayload).forEach(key => productPayload[key] === undefined && delete productPayload[key]);
 
     return this.productsService.patchProduct(tenantId, productId, productPayload);
   }

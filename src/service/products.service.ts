@@ -38,18 +38,6 @@ export class ProductsService {
     return this.request(this.http.post(`${this.baseUrl}/batch`, ids));
   }
 
-  private async request<T>(observable: Observable<any>): Promise<T> {
-    try {
-      const response = await firstValueFrom(observable);
-      return response.data;
-    } catch (error) {
-      const status = error.response?.status || 500;
-      const message =
-        error.response?.data?.message || error.response?.data || 'Internal error';
-      throw new HttpException(message, status);
-    }
-  }
-
   async patchProduct(tenantId: string, productId: string, dto: any) {
     return this.request(
       this.http.patch(`${this.baseUrl}/${tenantId}/${productId}`, dto)
@@ -66,5 +54,17 @@ export class ProductsService {
     return this.request(
       this.http.delete(`${this.baseUrl}/${tenantId}/${productId}`)
     )
+  }
+  
+  private async request<T>(observable: Observable<any>): Promise<T> {
+    try {
+      const response = await firstValueFrom(observable);
+      return response.data;
+    } catch (error) {
+      const status = error.response?.status || 500;
+      const message =
+        error.response?.data?.message || error.response?.data || 'Internal error';
+      throw new HttpException(message, status);
+    }
   }
 }

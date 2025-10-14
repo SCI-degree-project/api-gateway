@@ -1,4 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Dimensions } from 'src/domain/Dimensions';
+import { Media } from 'src/domain/Media';
 
 export class UpdateProductDto {
   @ApiPropertyOptional()
@@ -16,9 +18,9 @@ export class UpdateProductDto {
   @ApiPropertyOptional()
   style?: string;
 
-  @ApiPropertyOptional()
-  model?: string;
-
-  @ApiPropertyOptional({ type: [String] })
-  gallery?: string[];
+  @ApiPropertyOptional({ type: () => Media })
+    media: Media;
+  
+    @ApiPropertyOptional({ type: () => Dimensions })
+    dimensions: Dimensions;
 }
