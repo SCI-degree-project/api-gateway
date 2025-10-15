@@ -40,7 +40,7 @@ export class ProductsController {
       gallery?: Express.Multer.File[];
       model?: Express.Multer.File[];
     },
-    @Body() body: CreateProductDto,
+    @Body() body: any,
   ) {
     const imageFiles = files.gallery || [];
     const modelFile = files.model?.[0];
@@ -58,17 +58,30 @@ export class ProductsController {
       modelUrl = await this.mediaService.uploadFile(modelFile);
     }
 
-    const productPayload = {
+    const finalGalleryItems = galleryUrls.map((url, index) => ({
+      imageUrl: url,
+      altText: imageFiles[index].originalname,
+      aspectRatio: null
+    }));
+
+    const productPayload: any = {
       name: body.name,
       description: body.description,
       price: Number(body.price),
+
       materials: Array.isArray(body.materials)
         ? body.materials
         : [body.materials].filter(Boolean),
+
       style: body.style,
       tenantId: body.tenantId,
-      gallery: galleryUrls,
-      model: modelUrl,
+
+      media: {
+        gallery: finalGalleryItems,
+        model: modelUrl,
+      },
+
+      dimensions: JSON.parse(body.dimensions),
     };
 
     return this.productsService.createProduct(productPayload);
@@ -94,18 +107,30 @@ export class ProductsController {
     } = {},
     @Body() body: UpdateProductDto,
   ) {
+    console.log("Body", body);
     const imageFiles = files?.gallery || [];
     const modelFile = files?.model?.[0];
 
-    let gallery: string[] = [];
+    const newGalleryUrls = imageFiles.length > 0
+      ? await Promise.all(imageFiles.map(file => this.mediaService.uploadFile(file)))
+      : [];
 
-    if (imageFiles.length > 0) {
-      gallery = await Promise.all(
-        imageFiles.map(file => this.mediaService.uploadFile(file)),
-      );
-    } else if (body.gallery) {
-      gallery = Array.isArray(body.gallery) ? body.gallery : [body.gallery].filter(Boolean);
-    }
+    const newGalleryItems = newGalleryUrls.map((url, index) => ({
+      imageUrl: url,
+      altText: imageFiles[index]?.originalname || `image-${index + 1}`,
+      aspectRatio: null,
+    }));
+
+    const previousGalleryItems = (Array.isArray(body.gallery) ? body.gallery : [body.gallery])
+      .filter(Boolean)
+      .map((url, index) => ({
+        imageUrl: url,
+        altText: `existing-image-${index + 1}`,
+        aspectRatio: null,
+      }));
+
+    const finalGalleryItems = [...previousGalleryItems, ...newGalleryItems];
+
 
     let modelUrl = '';
     if (modelFile) {
@@ -115,9 +140,10 @@ export class ProductsController {
     }
 
     const productPayload: any = {
-      tenantId,
-      gallery,
-      model: modelUrl,
+      media: {
+        gallery: finalGalleryItems,
+        model: modelUrl,
+      },
     };
 
     if (body.name !== undefined) productPayload.name = body.name;
@@ -129,9 +155,22 @@ export class ProductsController {
         : [body.materials].filter(Boolean);
     }
     if (body.style !== undefined) productPayload.style = body.style;
+    if (body.dimensions !== undefined) {
+      productPayload.dimensions = typeof body.dimensions === 'string'
+        ? JSON.parse(body.dimensions)
+        : body.dimensions;
+    }
+
+    if ((body as any).visible !== undefined) {
+      productPayload.status = {
+        visible: (body as any).visible,
+      };
+    }
+    console.log("Payload", productPayload);
 
     return this.productsService.patchProduct(tenantId, productId, productPayload);
   }
+
 
   @Get(':tenantId')
   @ApiOperation({ summary: 'Get a list of products with pagination' })
