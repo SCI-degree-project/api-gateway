@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Dimensions } from 'src/domain/Dimensions';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Modern Chair' })
@@ -8,7 +9,7 @@ export class CreateProductDto {
   description: string;
 
   @ApiProperty({ example: 299.99 })
-  price: number;
+  price: string;
 
   @ApiProperty({ type: [String], example: ['WOOD'] })
   materials: String[];
@@ -18,4 +19,7 @@ export class CreateProductDto {
 
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
   tenantId: string;
+
+  @ApiProperty({ type: () => Dimensions })
+  dimensions: Dimensions;
 }
