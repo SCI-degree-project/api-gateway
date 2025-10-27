@@ -5,9 +5,13 @@ import {
     Post,
     Res,
     HttpStatus,
+    Body,
 } from '@nestjs/common';
 import { MetricsService } from 'src/service/metrics.service';
 import { Response } from 'express';
+import { MetricType } from 'src/domain/MetricType';
+import { RegisterTimeMetricDto } from 'src/dto/register-time-metric.dto';
+import { RegisterMetricDto } from 'src/dto/register-metric.dto';
 
 @Controller('/metrics')
 export class MetricsController {
@@ -23,30 +27,28 @@ export class MetricsController {
         }
     }
 
-    @Post('click/:productId')
-    async registerClick(@Param('productId') productId: string, @Res() res: Response) {
+    @Post('register/:productId')
+    async registerMetric(
+        @Param('productId') productId: string, 
+        @Body() metric: RegisterMetricDto, 
+        @Res() res: Response
+    ) {
         try {
-            await this.metricsService.registerClick(productId);
+            await this.metricsService.registerMetric(productId, metric);
             return res.status(HttpStatus.OK).send();
         } catch (error) {
             return res.status(this.metricsService.mapError(error)).send();
         }
     }
 
-    @Post('ar-views/:productId')
-    async registerArView(@Param('productId') productId: string, @Res() res: Response) {
+    @Post('register-time/:productId')
+    async registerTimeMetric(
+        @Param('productId') productId: string,
+        @Body() body: RegisterTimeMetricDto,
+        @Res() res: Response
+    ) {  
         try {
-            await this.metricsService.registerArView(productId);
-            return res.status(HttpStatus.OK).send();
-        } catch (error) {
-            return res.status(this.metricsService.mapError(error)).send();
-        }
-    }
-
-    @Post('search-appearances/:productId')
-    async registerSearchAppearance(@Param('productId') productId: string, @Res() res: Response) {
-        try {
-            await this.metricsService.registerSearchAppearance(productId);
+            await this.metricsService.registerTimeMetric(productId, body);
             return res.status(HttpStatus.OK).send();
         } catch (error) {
             return res.status(this.metricsService.mapError(error)).send();

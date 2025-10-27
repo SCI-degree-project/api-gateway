@@ -3,6 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
+import { MetricType } from 'src/domain/MetricType';
+import { RegisterTimeMetricDto } from 'src/dto/register-time-metric.dto';
+import { RegisterMetricDto } from 'src/dto/register-metric.dto';
 
 @Injectable()
 export class MetricsService {
@@ -26,21 +29,15 @@ export class MetricsService {
         return response.data;
     }
 
-    async registerClick(productId: string): Promise<void> {
+    async registerMetric(productId: string, metric: RegisterMetricDto): Promise<void> {
         await firstValueFrom(
-            this.http.post(`${this.baseUrl}/click/${productId}`),
+            this.http.post(`${this.baseUrl}/register/${productId}`, metric),
         );
     }
 
-    async registerArView(productId: string): Promise<void> {
+    async registerTimeMetric(productId: string, data: RegisterTimeMetricDto): Promise<void> {
         await firstValueFrom(
-            this.http.post(`${this.baseUrl}/ar-views/${productId}`),
-        );
-    }
-
-    async registerSearchAppearance(productId: string): Promise<void> {
-        await firstValueFrom(
-            this.http.post(`${this.baseUrl}/search-appearances/${productId}`),
+            this.http.post(`${this.baseUrl}/register-time/${productId}`, data),
         );
     }
 

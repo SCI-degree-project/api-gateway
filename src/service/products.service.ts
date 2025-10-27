@@ -2,6 +2,8 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Observable, firstValueFrom } from 'rxjs';
+import { Material } from 'src/domain/Material';
+import { Style } from 'src/domain/Style';
 
 @Injectable()
 export class ProductsService {
@@ -66,5 +68,17 @@ export class ProductsService {
     return this.request(
       this.http.delete(`${this.baseUrl}/${tenantId}/${productId}`)
     )
+  }
+
+  async getProductsByMaterial(tenantId: string, material: Material, page: number, size: number) {
+    return this.request(this.http.get(`${this.baseUrl}/${tenantId}/material`, { params: { material, page, size } }));
+  }
+
+  async getProductsByStyle(tenantId: string, style: Style, page: number, size: number) {
+    return this.request(this.http.get(`${this.baseUrl}/${tenantId}/style`, { params: { style, page, size } }));
+  }
+
+  async getScoredProducts(page: number, size: number) {
+    return this.request(this.http.get(`${this.baseUrl}/scored`, { params: { page, size } }));
   }
 }

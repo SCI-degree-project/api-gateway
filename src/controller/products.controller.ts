@@ -17,6 +17,8 @@ import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody } from '@nestjs/swag
 import { CreateProductDto } from 'src/dto/create-product.dto';
 import { UpdateProductDto } from 'src/dto/update-product.dto';
 import { ProductSearchCriteriaDto } from 'src/dto/product-search-criteria.dto';
+import { Material } from 'src/domain/Material';
+import { Style } from 'src/domain/Style';
 
 @ApiTags('Products')
 @Controller('products')
@@ -107,7 +109,6 @@ export class ProductsController {
     } = {},
     @Body() body: UpdateProductDto,
   ) {
-    console.log("Body", body);
     const imageFiles = files?.gallery || [];
     const modelFile = files?.model?.[0];
 
@@ -166,7 +167,6 @@ export class ProductsController {
         visible: (body as any).visible,
       };
     }
-    console.log("Payload", productPayload);
 
     return this.productsService.patchProduct(tenantId, productId, productPayload);
   }
@@ -219,5 +219,52 @@ export class ProductsController {
     @Param('productId') productId: string,
   ) {
     return this.productsService.deleteProduct(tenantId, productId);
+  }
+
+  @Get(':tenantId/material')
+  @ApiOperation({ summary: 'Get products by material' })
+  @ApiParam({ name: 'tenantId', type: String })
+  @ApiQuery({ name: 'material', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'size', required: false })
+  async getProductsByMaterial(
+    @Param('tenantId') tenantId: string,
+    @Query('material') material: Material,
+    @Query('page') page: string,
+    @Query('size') size: string,
+  ) {
+    const pageNumber = parseInt(page) || 0;
+    const sizeNumber = parseInt(size) || 10;
+    return this.productsService.getProductsByMaterial(tenantId, material, pageNumber, sizeNumber);
+  }
+
+  @Get(':tenantId/style')
+  @ApiOperation({ summary: 'Get products by style' })
+  @ApiParam({ name: 'tenantId', type: String })
+  @ApiQuery({ name: 'style', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'size', required: false })
+  async getProductsByStyle(
+    @Param('tenantId') tenantId: string,
+    @Query('style') style: Style,
+    @Query('page') page: string,
+    @Query('size') size: string,
+  ) {
+    const pageNumber = parseInt(page) || 0;
+    const sizeNumber = parseInt(size) || 10;
+    return this.productsService.getProductsByStyle(tenantId, style, pageNumber, sizeNumber);
+  }
+
+  @Get('scored')
+  @ApiOperation({ summary: 'Get scored products' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'size', required: false })
+  async getScoredProducts(
+    @Query('page') page: string,
+    @Query('size') size: string,
+  ) {
+    const pageNumber = parseInt(page) || 0;
+    const sizeNumber = parseInt(size) || 10;
+    return this.productsService.getScoredProducts(pageNumber, sizeNumber);
   }
 }
